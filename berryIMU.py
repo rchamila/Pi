@@ -153,25 +153,25 @@ def writeGRY(register,value):
 def readACCx():
         acc_l = bus.read_byte_data(ACC_ADDRESS, OUT_X_L_A)
         acc_h = bus.read_byte_data(ACC_ADDRESS, OUT_X_H_A)
-	acc_combined = (acc_l | acc_h <<8)
+		acc_combined = (acc_l | acc_h <<8)
 
-	return acc_combined  if acc_combined < 32768 else acc_combined - 65536
+		return acc_combined  if acc_combined < 32768 else acc_combined - 65536
 
 
 def readACCy():
         acc_l = bus.read_byte_data(ACC_ADDRESS, OUT_Y_L_A)
         acc_h = bus.read_byte_data(ACC_ADDRESS, OUT_Y_H_A)
-	acc_combined = (acc_l | acc_h <<8)
+		acc_combined = (acc_l | acc_h <<8)
 
-	return acc_combined  if acc_combined < 32768 else acc_combined - 65536
+		return acc_combined  if acc_combined < 32768 else acc_combined - 65536
 
 
 def readACCz():
         acc_l = bus.read_byte_data(ACC_ADDRESS, OUT_Z_L_A)
         acc_h = bus.read_byte_data(ACC_ADDRESS, OUT_Z_H_A)
-	acc_combined = (acc_l | acc_h <<8)
+		acc_combined = (acc_l | acc_h <<8)
 
-	return acc_combined  if acc_combined < 32768 else acc_combined - 65536
+		return acc_combined  if acc_combined < 32768 else acc_combined - 65536
 
 
 def readMAGx():

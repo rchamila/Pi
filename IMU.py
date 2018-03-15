@@ -28,18 +28,22 @@ import sys
 import smbus
 import time
 import math
-from LSM9DS0 import *
+import Helper
 import datetime
-bus = smbus.SMBus(1)
 
+from LSM9DS0 import *
+from Helper import *
+
+bus = smbus.SMBus(1)
 
 def writeMAG(CTRL_REG7_XM, param):
 	pass
 
+log = LogHelper()
 
 class IMU:
 
-	print('Within berryIMU')
+	log.logInfo('IMU data initiated...')
 
 	IMU_upside_down = 0 	# Change calculations depending on IMu orientation.
 							# 0 = Correct side up. This is when the skull logo is facing down
@@ -72,6 +76,8 @@ class IMU:
 	KFangleY = 0.0
 
 	READ_IMU_DATA = 0
+
+	DATA = list()
 
 	def kalmanFilterY (self,accAngle, gyroRate, DT):
 		y=0.0
@@ -226,7 +232,7 @@ class IMU:
 
 	def __init__(self):
 
-		print('Within INIT')
+		log.logInfo('Setting up IMU configuration....')
 
 		self.writeACC(CTRL_REG1_XM, 0b01100111)
 		self.writeACC(CTRL_REG2_XM, 0b00100000)
@@ -281,7 +287,7 @@ class IMU:
 
 		while self.READ_IMU_DATA == 1:
 
-
+			row = []
 			#Read the accelerometer,gyroscope and magnetometer values
 			ACCx = self.readACCx()
 			ACCy = self.readACCy()
@@ -382,118 +388,32 @@ class IMU:
 			MAGy = mag_medianTable2Y[self.MAG_MEDIANTABLESIZE/2];
 			MAGz = mag_medianTable2Z[self.MAG_MEDIANTABLESIZE/2];
 
+			row.append(a)
+			row.append(ACCx)
+			row.append(ACCy)
+			row.append(ACCz)
+			row.append(GYRx)
+			row.append(GYRy)
+			row.append(GYRz)
+			row.append(MAGx)
+			row.append(MAGy)
+			row.append(MAGz)
 
-
-			#Convert Gyro raw to degrees per second
-			rate_gyr_x =  GYRx * self.G_GAIN
-			rate_gyr_y =  GYRy * self.G_GAIN
-			rate_gyr_z =  GYRz * self.G_GAIN
-
-
-			#Calculate the angles from the gyro.
-			self.gyroXangle+=rate_gyr_x*LP
-			self.gyroYangle+=rate_gyr_y*LP
-			self.gyroZangle+=rate_gyr_z*LP
-
-
-			##Convert Accelerometer values to degrees
-			AccXangle =  (math.atan2(ACCy,ACCz)+ self.M_PI)* self.RAD_TO_DEG
-			AccYangle =  (math.atan2(ACCz,ACCx)+ self.M_PI)* self.RAD_TO_DEG
-
-
-
-
-
-
-			# Change the rotation value of the accelerometer to -/+ 180 and move the Y axis '0' point to up
-			# Two different pieces of code are used depending on how your IMU is mounted
-			if self.IMU_upside_down : 		# If IMU is upside down E.g Skull logo is facing up.
-				if AccXangle >180:
-					AccXangle -= 360.0
-					AccYangle-=90
-				if AccYangle >180:
-					AccYangle -= 360.0
-
-			else : 						# If IMU is up the correct way E.g Skull logo is facing down.
-				AccXangle -= 180.0
-				if AccYangle > 90:
-					AccYangle -= 270.0
-				else:
-					AccYangle += 90.0
-
-
-
-			#Complementary filter used to combine the accelerometer and gyro values.
-			self.CFangleX= self.AA*(self.CFangleX+rate_gyr_x*LP) +(1 - self.AA) * AccXangle
-			self.CFangleY= self.AA*(self.CFangleY+rate_gyr_y*LP) +(1 - self.AA) * AccYangle
-
-			#Kalman filter used to combine the accelerometer and gyro values.
-			self.kalmanY = self.kalmanFilterY(AccYangle, rate_gyr_y,LP)
-			self.kalmanX = self.kalmanFilterX(AccXangle, rate_gyr_x,LP)
-
-
-
-			if self.IMU_upside_down :
-				MAGy = -MAGy
-
-			#Calculate heading
-			heading = 180 * math.atan2(MAGy,MAGx)/self.M_PI
-
-			#Only have our heading between 0 and 360
-			if heading < 0:
-				heading += 360
-
-
-
-
-			#Normalize accelerometer raw values.
-			accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-			accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-
-
-			#Calculate pitch and roll
-			if self.IMU_upside_down :
-				accXnorm = -accXnorm				#flip Xnorm as the IMU is upside down
-				accYnorm = -accYnorm				#flip Ynorm as the IMU is upside down
-				pitch = math.asin(accXnorm)
-				roll = math.asin(accYnorm/math.cos(pitch))
-			else :
-				pitch = math.asin(accXnorm)
-				roll = -math.asin(accYnorm/math.cos(pitch))
-
-
-			#Calculate the new tilt compensated values
-			magXcomp = MAGx*math.cos(pitch)+MAGz*math.sin(pitch)
-			magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)-MAGz*math.sin(roll)*math.cos(pitch)
-
-			#Calculate tilt compensated heading
-			tiltCompensatedHeading = 180 * math.atan2(magYcomp,magXcomp)/self.M_PI
-
-			#Only have our heading between 0 and 360
-			if tiltCompensatedHeading < 0:
-				tiltCompensatedHeading += 360
-
-
-
-
-
-			if 1:			#Change to '0' to stop showing the angles from the accelerometer
-				print ("\033[1;34;40mACCX Angle %5.2f ACCY Angle %5.2f  \033[0m  " % (AccXangle, AccYangle)),
+			self.DATA.append(row)
 
 			if 1:			#Change to '0' to stop  showing the angles from the gyro
-				print ("\033[1;31;40m\tGRYX Angle %5.2f  GYRY Angle %5.2f  GYRZ Angle %5.2f" % (self.gyroXangle,self.gyroYangle,self.gyroZangle)),
+				print ("\033[1;31;40m\tTimestamp %s " % (str(a))),
+
+			if 1:			#Change to '0' to stop showing the angles from the accelerometer
+				print ("\033[1;34;40mACCX %5.2f ACCY %5.2f  ACCZ %5.2f \033[0m  " % (ACCx, ACCy,ACCz)),
+
+			if 1:			#Change to '0' to stop  showing the angles from the gyro
+				print ("\033[1;33;40m\tGRYX %5.2f  GYRY %5.2f  GYRZ %5.2f" % (GYRx,GYRy,GYRz)),
 
 			if 1:			#Change to '0' to stop  showing the angles from the complementary filter
-				print ("\033[1;35;40m   \tCFangleX Angle %5.2f \033[1;36;40m  CFangleY Angle %5.2f \33[1;32;40m" % (self.CFangleX,self.CFangleY)),
-
-			if 1:			#Change to '0' to stop  showing the heading
-				print ("HEADING  %5.2f \33[1;37;40m tiltCompensatedHeading %5.2f" % (heading,tiltCompensatedHeading)),
-
-			if 1:			#Change to '0' to stop  showing the angles from the Kalman filter
-				print ("\033[1;31;40m kalmanX %5.2f  \033[1;35;40m kalmanY %5.2f  " % (self.kalmanX,self.kalmanY)),
-
-			print(" ")
+				print ("\033[1;35;40m\tMAGx %5.2f  MAGy %5.2f  MAGz %5.2f \33[1;32;40m" % (MAGx,MAGy,MAGz))
 
 			#slow program down a bit, makes the output more readable
 			time.sleep(0.03)
 
+	print('End of read')

@@ -1,14 +1,19 @@
 import threading
 import time
 import datetime
-import RPi.GPIO as GPIO
-
+import RPi.GPIO as GPIO 
+import Helper
 
 
 from IMU import *
 from picamera import PiCamera
+from Helper import *
 
-print('Data capturing started...')
+
+log = LogHelper()
+
+log.logInfo('Data capturing started...')
+log.logInfo('******************************************************')
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17,GPIO.IN)
@@ -18,38 +23,58 @@ def worker():
     imu.read()
 
 try:
-    #command = ''
+    command = ''
     camera = PiCamera()
+
     while (True):
-        #if(command == 'y'):
-            #command = ''
-        if(GPIO.input(17)):
+        command = raw_input('Do you want to take a photo y/n ? ')
+        if(command == 'y'):
+            command = ''
+        #if(GPIO.input(17)):
             
             thread = threading.Thread(target=worker)
 
             i = datetime.datetime.now()
 
+            log.logInfo('Button press detected...')
+            log.logInfo('=====================================================')
+
             imu.READ_IMU_DATA = 1
             
-            thread.start()
+            thread.start() 
             
             camera.start_preview()
+
+            log.logInfo('Camera started...')
+
+            imagefile = "/home/pi/source/DC/Images/"+ str(i) + ".jpg"
             
-            camera.capture("/home/pi/source/DC/Images/"+ str(i) + ".jpg")
+            camera.capture(imagefile)
+            log.logInfo('Image captured and saved to '  + imagefile)
+
             camera.stop_preview()
+
+            log.logInfo('Camera stopped...')
             
             imu.READ_IMU_DATA = 0
-            
-            f= open("/home/pi/source/DC/DataFiles"+ str(i) + ".txt","w+")
+
+            datafile = "/home/pi/source/DC/DataFiles/"+ str(i) + ".txt"
+                        
+            f= open(datafile,"w+")
             for i in imu.DATA:
                 f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s \n' % (str(i[0]),str(i[1]),str(i[2]),str(i[3]),str(i[4]),str(i[5]),str(i[6]),str(i[7]),str(i[8]),str(i[9])))
                 #f.write('%s,%s,%s \n' % (str(i[0]),str(i[1]),str(i[2])))
             f.close()
+
+            log.logInfo("Data captured and saved to  " + datafile)
             #thread.cancel()
-        #else:
+        else:
             #command = raw_input('Do you want to take a photo y/n ? ')
+            #if command == 'y':
+            sys.exit();
     # sys.exit();
-except(KeyboardInterrupt, SystemExit):
-    thread.cancel();
+except Exception:
+    log.logError("Error in capturing data")
     # sys.exit();
-print('End of current thread')
+log.logInfo('End of main thread')
+log.logInfo('*************************************************')
