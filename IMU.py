@@ -282,7 +282,7 @@ class IMU:
 		#print('IMU function')
 
 	def read(self):
-		print('Within read')
+		log.logInfo('Data reading initiated')
 		a = datetime.datetime.now()
 
 		while self.READ_IMU_DATA == 1:
@@ -416,4 +416,4 @@ class IMU:
 			#slow program down a bit, makes the output more readable
 			time.sleep(0.03)
 
-	print('End of read')
+	#print('End of read')

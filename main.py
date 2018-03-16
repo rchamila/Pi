@@ -27,10 +27,10 @@ try:
     camera = PiCamera()
 
     while (True):
-        command = raw_input('Do you want to take a photo y/n ? ')
-        if(command == 'y'):
-            command = ''
-        #if(GPIO.input(17)):
+        #command = raw_input('Do you want to take a photo y/n ? ')
+        #if(command == 'y'):
+            #command = ''
+        if(GPIO.input(17)):
             
             thread = threading.Thread(target=worker)
 
@@ -63,18 +63,16 @@ try:
             f= open(datafile,"w+")
             for i in imu.DATA:
                 f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s \n' % (str(i[0]),str(i[1]),str(i[2]),str(i[3]),str(i[4]),str(i[5]),str(i[6]),str(i[7]),str(i[8]),str(i[9])))
-                #f.write('%s,%s,%s \n' % (str(i[0]),str(i[1]),str(i[2])))
             f.close()
 
             log.logInfo("Data captured and saved to  " + datafile)
-            #thread.cancel()
-        else:
+        #else:
             #command = raw_input('Do you want to take a photo y/n ? ')
             #if command == 'y':
-            sys.exit();
-    # sys.exit();
+            #sys.exit();
 except Exception:
-    log.logError("Error in capturing data")
-    # sys.exit();
+    log.logError("Error in capturing data") 
+
+
 log.logInfo('End of main thread')
 log.logInfo('*************************************************')
