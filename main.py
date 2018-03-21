@@ -28,28 +28,30 @@ try:
 
     while (True):
         #command = raw_input('Do you want to take a photo y/n ? ')
-        #if(command == 'y'):
-            #command = ''
-        if(GPIO.input(17)):
+        if(command == 'y'):
+            command = ''
+        #if(GPIO.input(17)):
             
             thread = threading.Thread(target=worker)
-
-            i = datetime.datetime.now()
-
+           
             log.logInfo('Button press detected...')
             log.logInfo('=====================================================')
 
             imu.READ_IMU_DATA = 1
             
-            thread.start() 
+            thread.start()             
             
+            #Wait 200 ms to start data capturing, enabling sensors to initialise
+            time.sleep(0.2)
+
             camera.start_preview()
 
             log.logInfo('Camera started...')
 
+            i = datetime.datetime.now()  
             imagefile = "/home/pi/source/DC/Images/"+ str(i) + ".jpg"
-            
             camera.capture(imagefile)
+
             log.logInfo('Image captured and saved to '  + imagefile)
 
             camera.stop_preview()
@@ -66,10 +68,12 @@ try:
             f.close()
 
             log.logInfo("Data captured and saved to  " + datafile)
-        #else:
-            #command = raw_input('Do you want to take a photo y/n ? ')
-            #if command == 'y':
-            #sys.exit();
+        else:
+            command = raw_input('Do you want to take a photo y/n ? ')
+            if command == 'y':
+                continue;
+            else:
+                sys.exit();
 except Exception:
     log.logError("Error in capturing data") 
 

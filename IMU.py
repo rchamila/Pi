@@ -284,9 +284,9 @@ class IMU:
 	def read(self):
 		log.logInfo('Data reading initiated')
 		a = datetime.datetime.now()
-
+		counter = 0;
 		while self.READ_IMU_DATA == 1:
-
+			
 			row = []
 			#Read the accelerometer,gyroscope and magnetometer values
 			ACCx = self.readACCx()
@@ -299,11 +299,7 @@ class IMU:
 			MAGy = self.readMAGy()
 			MAGz = self.readMAGz()
 
-			##Calculate loop Period(LP). How long between Gyro Reads
-			b = datetime.datetime.now() - a
-			a = datetime.datetime.now()
-			LP = b.microseconds/(1000000*1.0)
-			print "Loop Time | %5.2f|" % ( LP ),
+			
 
 
 
@@ -388,6 +384,17 @@ class IMU:
 			MAGy = mag_medianTable2Y[self.MAG_MEDIANTABLESIZE/2];
 			MAGz = mag_medianTable2Z[self.MAG_MEDIANTABLESIZE/2];
 
+			#Discard initial readings
+			if counter < 10 :
+				counter = counter + 1
+				continue;
+
+			##Calculate loop Period(LP). How long between Gyro Reads
+			b = datetime.datetime.now() - a
+			a = datetime.datetime.now()
+			LP = b.microseconds/(1000000*1.0)
+			print "Loop Time | %5.2f|" % ( LP )
+
 			row.append(a)
 			row.append(ACCx)
 			row.append(ACCy)
@@ -414,6 +421,6 @@ class IMU:
 				print ("\033[1;35;40m\tMAGx %5.2f  MAGy %5.2f  MAGz %5.2f \33[1;32;40m" % (MAGx,MAGy,MAGz))
 
 			#slow program down a bit, makes the output more readable
-			time.sleep(0.03)
+			time.sleep(0.01)
 
 	#print('End of read')
